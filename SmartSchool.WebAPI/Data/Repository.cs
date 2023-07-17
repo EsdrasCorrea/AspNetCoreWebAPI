@@ -82,22 +82,22 @@ namespace SmartSchool.WebAPI.Data
             return await PageList<Aluno>.CreateAsync(query, pageParams.pageNumber, pageParams.PageSize);
         }
 
-        public Aluno[] GetAllAlunosByDisciplinaId(int disciplinaId, bool includeProfessor = false)
+        public async Task<Aluno[]> GetAllAlunosByDisciplinaIdAsync(int disciplinaId, bool includeProfessor = false)
         {
             IQueryable<Aluno> query = _context.Alunos;
 
-            if(includeProfessor)
+            if (includeProfessor)
             {
                 query = query.Include(a => a.AlunosDisciplinas)
                              .ThenInclude(ad => ad.Disciplina)
                              .ThenInclude(d => d.Professor);
             }
-            
+
             query = query.AsNoTracking()
                          .OrderBy(a => a.Id)
                          .Where(aluno => aluno.AlunosDisciplinas.Any(ad => ad.DisciplinaId == disciplinaId));
-            
-            return query.ToArray();
+
+            return await query.ToArrayAsync();
         }
 
         public Aluno GetAlunoById(int alunoId, bool includeProfessor = false)
@@ -168,6 +168,24 @@ namespace SmartSchool.WebAPI.Data
                          .Where(professor => professor.Id == professorId);
             
             return query.FirstOrDefault();
+        }
+
+        public Professor[] GetProfessoresByAlunoId( int alunoId, bool includeAlunos = false )
+        {
+            IQueryable<Professor> query = _context.Professores;
+
+            if(includeAlunos)
+            {
+                query = query.Include(p => p.Disciplinas)
+                             .ThenInclude(p => p.AlunosDisciplinas)
+                             .ThenInclude(ad => ad.Aluno);
+            }
+
+            query = query.AsNoTracking()
+                         .OrderBy(p => p.Id)
+                         .Where(aluno => aluno.Disciplinas.Any(d => d.AlunosDisciplinas.Any(ad => ad.AlunoId == alunoId)));
+            
+            return query.ToArray();
         }
     }
 }

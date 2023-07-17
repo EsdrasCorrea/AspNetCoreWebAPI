@@ -43,9 +43,16 @@ namespace SmartSchool.WebAPI.Controllers
             var aluno = _repository.GetAlunoById(id, true);
             if (aluno == null) return BadRequest("Aluno não foi encontrado");
 
-            var alunoDto = _mapper.Map<AlunoDto>(aluno);
+            var alunoDto = _mapper.Map<AlunoRegistrarDto>(aluno);
 
             return Ok(alunoDto);
+        }
+
+        [HttpGet("ByDisciplina/{id}")]
+        public async Task<IActionResult> GetByDisciplinaId(int id)
+        {
+            var result = await _repository.GetAllAlunosByDisciplinaIdAsync(id, false);
+            return Ok(result);
         }
         
         
@@ -82,9 +89,9 @@ namespace SmartSchool.WebAPI.Controllers
             return BadRequest("Aluno não atualizado");
         }
 
-        
+        // api/aluno
         [HttpPatch("{id}")]
-        public IActionResult Patch(int id, AlunoRegistrarDto model)
+        public IActionResult Patch(int id, AlunoPatchDto model)
         {
             var aluno = _repository.GetAlunoById(id);
             if (aluno == null) return BadRequest("Aluno não encontrado");
@@ -94,7 +101,25 @@ namespace SmartSchool.WebAPI.Controllers
             _repository.Update(aluno);
             if (_repository.SaveChanges())
             {
-                return Created($"api/aluno/{model.Id}", _mapper.Map<AlunoDto>(aluno));
+                return Created($"api/aluno/{model.Id}", _mapper.Map<AlunoPatchDto>(aluno));
+            }
+
+            return BadRequest("Aluno não atualizado");
+        }
+
+        // api/aluno/{id}trocarEstado
+        [HttpPatch("{id}/trocarEstado")]
+        public IActionResult trocarEstado(int id, TrocaEstadoDto trocaEstado)
+        {
+            var aluno = _repository.GetAlunoById(id);
+            aluno.Ativo = trocaEstado.Estado;
+            if (aluno == null) return BadRequest("Aluno não encontrado");
+
+            _repository.Update(aluno);
+            if (_repository.SaveChanges())
+            {
+                var msn = aluno.Ativo ? "ativado" : "desativado";
+                return Ok(new {message = $"Aluno {msn} com sucesso!"});
             }
 
             return BadRequest("Aluno não atualizado");
